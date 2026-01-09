@@ -1,0 +1,5 @@
+{
+  "name": "LingoCard GenAI",
+  "description": "An AI-powered vocabulary card generator that creates visual scenes, vocabulary lists, and example sentences based on user topics.",
+  "requestFramePermissions": []
+}
