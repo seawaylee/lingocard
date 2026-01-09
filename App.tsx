@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { CardDisplay } from './components/CardDisplay';
 import { AppState, DifficultyLevel, LessonContent, ModelType } from './types';
-import { generateLessonData, generateSceneImage, detectVocabularyPositions } from './services/geminiService';
+import { generateLessonData, generateSceneImage } from './services/geminiService';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>({
@@ -51,52 +51,19 @@ const App: React.FC = () => {
         // We do NOT set the global error here, so the user can still see the text content
       }
 
-      // If image failed, we skip vision detection but show content
-      if (!imageBase64) {
-         setAppState(prev => ({
-           ...prev,
-           imageUrl: null,
-           isLoading: false,
-           loadingStep: undefined,
-           content: { ...lessonData, fullPrompt: finalPrompt }
-         }));
-         return;
-      }
-
       const updatedLessonData = {
           ...lessonData,
           fullPrompt: finalPrompt
       };
 
+      // 3. Finish (No Vision Step needed anymore as labels are baked in)
       setAppState(prev => ({
         ...prev,
         imageUrl: imageBase64,
         content: updatedLessonData,
-        loadingStep: 'locating_objects'
+        isLoading: false,
+        loadingStep: undefined
       }));
-
-      // 3. Vision Step
-      try {
-          const updatedVocabulary = await detectVocabularyPositions(imageBase64, lessonData.vocabulary, modelType);
-          setAppState(prev => ({
-            ...prev,
-            content: {
-              ...updatedLessonData,
-              vocabulary: updatedVocabulary
-            },
-            isLoading: false,
-            loadingStep: undefined
-          }));
-      } catch (visionError) {
-          console.error("Vision detection failed", visionError);
-          // If vision fails, just show image without coordinates
-          setAppState(prev => ({
-            ...prev,
-            content: updatedLessonData,
-            isLoading: false,
-            loadingStep: undefined
-          }));
-      }
 
     } catch (error: any) {
       console.error("Generation failed", error);

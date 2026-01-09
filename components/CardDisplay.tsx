@@ -13,7 +13,6 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({ appState }) => {
       switch(loadingStep) {
           case 'generating_text': return 'Planning lesson...';
           case 'drawing_image': return 'Illustrating scene...';
-          case 'locating_objects': return 'Creating labels...';
           default: return 'Thinking...';
       }
   };
@@ -27,7 +26,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({ appState }) => {
              <div className="absolute inset-0 border-[6px] border-stone-800 rounded-full animate-[spin_3s_linear_infinite_reverse] scale-75 opacity-50"></div>
              <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-4xl">
-                    {loadingStep === 'locating_objects' ? '🏷️' : '🎨'}
+                    🎨
                 </span>
              </div>
           </div>
@@ -53,25 +52,34 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({ appState }) => {
   }
 
   return (
-    <div className="flex-1 h-full bg-stone-100 p-4 lg:p-6 overflow-y-auto flex items-center justify-center font-['Inter']">
-      <div className="max-w-6xl w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-[5px] border-stone-900 flex flex-col h-[90vh] lg:h-auto relative">
+    <div className="flex-1 h-full bg-stone-100 overflow-y-auto relative font-['Inter']">
+      {/* Wrapper: min-h-full allows centering when content is small, but flows when large */}
+      <div className="min-h-full w-full flex items-center justify-center p-4 lg:p-8">
         
-        {/* Header */}
-        <div className="bg-[#FFD966] p-4 lg:p-6 border-b-[5px] border-stone-900 flex justify-between items-center shrink-0">
-            <h1 className="text-3xl lg:text-5xl font-black text-stone-900 tracking-tight uppercase font-['Fredoka']">{content.topic}</h1>
-            <div className="text-xs font-bold text-stone-700 uppercase tracking-wider opacity-50">
-                Preview Mode
-            </div>
-        </div>
+        {/* Card Container 
+            We use a fixed height calculation on desktop to create a nice "app-within-app" feel,
+            ensuring it doesn't overflow the viewport unnecessarily.
+        */}
+        <div className="w-full max-w-6xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-[5px] border-stone-900 flex flex-col relative h-[600px] md:h-[700px] lg:h-[calc(100vh-6rem)]">
+          
+          {/* Header */}
+          <div className="bg-[#FFD966] p-4 lg:p-6 border-b-[5px] border-stone-900 flex justify-between items-center shrink-0">
+              <h1 className="text-2xl lg:text-4xl font-black text-stone-900 tracking-tight uppercase font-['Fredoka'] truncate mr-4">
+                  {content.topic}
+              </h1>
+              <div className="text-xs font-bold text-stone-700 uppercase tracking-wider opacity-50 shrink-0">
+                  Preview Mode
+              </div>
+          </div>
 
-        {/* Main Image Container */}
-        <div className="relative flex-1 bg-stone-50 overflow-hidden flex items-center justify-center pointer-events-none select-none">
-            <div className="relative w-full h-full flex items-center justify-center">
+          {/* Main Image Container */}
+          <div className="relative flex-1 bg-stone-50 overflow-hidden flex items-center justify-center select-none w-full">
+             <div className="relative w-full h-full flex items-center justify-center">
                {imageUrl ? (
                  <img 
                     src={imageUrl} 
                     alt={content.topic}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain max-h-full"
                  />
                ) : (
                  <div className="text-center p-8 opacity-50">
@@ -79,74 +87,11 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({ appState }) => {
                     <p className="text-xl font-bold text-stone-400">Image generation unavailable</p>
                  </div>
                )}
-
-               {/* 
-                  VISUAL STYLE: Speech Bubbles / Labels
-                  Fallback layout if image is missing or coordinates not found
-               */}
-               <div className="absolute inset-0">
-                  {content.vocabulary.map((vocab, index) => {
-                    const hasCoords = vocab.coordinates && vocab.coordinates.x > 0;
-                    
-                    // Fallback Grid Calculation
-                    // If no image/coords, we arrange them in a neat grid for visibility
-                    const cols = 2;
-                    const row = Math.floor(index / cols);
-                    const col = index % cols;
-                    
-                    // Spread them out evenly if no coords
-                    const fallbackLeft = 25 + (col * 50); 
-                    const fallbackTop = 20 + (row * 20); // Stack vertically
-
-                    const xPos = hasCoords ? vocab.coordinates!.x : fallbackLeft;
-                    const yPos = hasCoords ? vocab.coordinates!.y : fallbackTop;
-
-                    return (
-                      <div 
-                        key={index}
-                        className="absolute flex flex-col items-center justify-center z-10 transition-all duration-500 ease-out"
-                        style={{ 
-                            left: `${xPos}%`, 
-                            top: `${yPos}%`,
-                            transform: 'translate(-50%, -50%)' 
-                        }}
-                      >
-                         {/* THE TAG/LABEL DESIGN */}
-                         <div className="
-                            bg-white 
-                            border-[2.5px] border-stone-900 
-                            rounded-xl 
-                            px-3 py-1.5 
-                            shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                            flex flex-col items-center text-center 
-                            min-w-[100px]
-                         ">
-                            <span className="text-lg font-black text-stone-900 leading-none font-['Fredoka'] tracking-wide">
-                                {vocab.word}
-                            </span>
-                            
-                            <div className="text-[10px] font-bold text-stone-500 font-mono my-0.5">
-                                /{vocab.phonetic}/
-                            </div>
-
-                            <div className="text-base font-bold text-stone-800 leading-none font-['Fredoka']">
-                                {vocab.translation}
-                            </div>
-                         </div>
-                         
-                         {/* Little "pointer" triangle only if we have an image to point to */}
-                         {imageUrl && hasCoords && (
-                             <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-stone-900 mt-[-2px] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]"></div>
-                         )}
-                      </div>
-                    );
-                  })}
-               </div>
             </div>
-        </div>
+          </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 bg-white border-t-[5px] border-stone-900 flex justify-between items-center shrink-0 hidden lg:flex">
+          {/* Footer Actions */}
+          <div className="p-4 bg-white border-t-[5px] border-stone-900 flex justify-between items-center shrink-0 hidden lg:flex">
              <div className="text-xs font-bold text-stone-400 uppercase tracking-wider">
                 Generated by Gemini 2.5 Flash
              </div>
@@ -165,6 +110,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({ appState }) => {
                    </a>
                )}
              </div>
+          </div>
         </div>
       </div>
     </div>
